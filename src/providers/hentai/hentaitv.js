@@ -107,18 +107,25 @@ const scrapeWatch = async (id) => {
                 format: 'mp4'
             });
 
-            try {
-                const headRes = await axios.head(mp4SubSrc, { timeout: 2000 });
-                if (headRes.status === 200) {
-                    results.sources.push({
-                        src: mp4SubSrc,
-                        format: 'mp4'
-                    });
+            const ALWAYS_INCLUDE_SUB = process.env.ALWAYS_INCLUDE_SUB === 'true';
+
+            if (ALWAYS_INCLUDE_SUB) {
+                results.sources.push({
+                    src: mp4SubSrc,
+                    format: 'mp4'
+                });
+            } else {
+                try {
+                    const headRes = await axios.head(mp4SubSrc, { timeout: 2000 });
+                    if (headRes.status === 200) {
+                        results.sources.push({
+                            src: mp4SubSrc,
+                            format: 'mp4'
+                        });
+                    }
+                } catch (e) {
+                    // Do nothing
                 }
-                // If not 200, do not include -sub
-            } catch (e) {
-                // On any error (404, timeout, network, etc), do NOT include -sub
-                // This makes behavior the same on localhost and Vercel
             }
             if (!id.includes('-episode')) {
                 results.sources.push({
