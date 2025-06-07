@@ -107,25 +107,23 @@ const scrapeWatch = async (id) => {
                 format: 'mp4'
             });
 
-            const ALWAYS_INCLUDE_SUB = process.env.ALWAYS_INCLUDE_SUB === 'true';
-
-            if (ALWAYS_INCLUDE_SUB) {
-                results.sources.push({
-                    src: mp4SubSrc,
-                    format: 'mp4'
-                });
-            } else {
-                try {
-                    const headRes = await axios.head(mp4SubSrc, { timeout: 2000 });
-                    if (headRes.status === 200) {
-                        results.sources.push({
-                            src: mp4SubSrc,
-                            format: 'mp4'
-                        });
-                    }
-                } catch (e) {
-                    // Do nothing
+            try {
+                const res = await axios.get(mp4SubSrc, { responseType: 'text', timeout: 2000 });
+                // Check if response is HTML and contains <title>Not Found</title>
+                if (
+                    typeof res.data === 'string' &&
+                    res.data.includes('<title>Not Found</title>')
+                ) {
+                    // Do not include -sub
+                } else {
+                    // Not a "Not Found" HTML page, so include -sub
+                    results.sources.push({
+                        src: mp4SubSrc,
+                        format: 'mp4'
+                    });
                 }
+            } catch (e) {
+                // On network error, do not include -sub
             }
             if (!id.includes('-episode')) {
                 results.sources.push({
