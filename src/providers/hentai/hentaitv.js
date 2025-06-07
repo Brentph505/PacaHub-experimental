@@ -106,6 +106,10 @@ const scrapeWatch = async (id) => {
                 src: mp4Src,
                 format: 'mp4'
             });
+            results.sources.push({
+                src: mp4SubSrc,
+                format: 'mp4'
+            });
 
             try {
                 const res = await axios.get(mp4SubSrc, { responseType: 'text', timeout: 2000 });
