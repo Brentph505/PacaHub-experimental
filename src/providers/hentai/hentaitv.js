@@ -100,23 +100,38 @@ const scrapeWatch = async (id) => {
             }
             const episodeId = id.includes('-episode') ? id.replace(/-episode/, '') : `${id}-1`;
             const mp4Src = `https://r2.1hanime.com/${episodeId}.mp4`;
+            const mp4SubSrc = `https://r2.1hanime.com/${episodeId}-sub.mp4`;
+
             results.sources.push({
                 src: mp4Src,
                 format: 'mp4'
             });
 
-            // Dynamically check if the -sub version exists before adding
-            const mp4SubSrc = `https://r2.1hanime.com/${episodeId}-sub.mp4`;
+            // Try to check -sub, but fallback to always include if network error (not 404)
+            let subChecked = false;
             try {
-                const headRes = await axios.head(mp4SubSrc);
+                const headRes = await axios.head(mp4SubSrc, { timeout: 2000 });
                 if (headRes.status === 200) {
                     results.sources.push({
                         src: mp4SubSrc,
                         format: 'mp4'
                     });
+                    subChecked = true;
                 }
             } catch (e) {
-                // -sub version not available, do nothing
+                // If error is not 404, likely a network/platform issue, so include anyway
+                if (e.response && e.response.status === 404) {
+                    // Do not include -sub
+                    subChecked = true;
+                }
+                // else: network error, platform block, etc.
+            }
+            if (!subChecked) {
+                // Fallback: include -sub anyway, let client handle 404
+                results.sources.push({
+                    src: mp4SubSrc,
+                    format: 'mp4'
+                });
             }
 
             if (!id.includes('-episode')) {
