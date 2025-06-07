@@ -107,8 +107,6 @@ const scrapeWatch = async (id) => {
                 format: 'mp4'
             });
 
-            // Try to check -sub, but fallback to always include if network error (not 404)
-            let subChecked = false;
             try {
                 const headRes = await axios.head(mp4SubSrc, { timeout: 2000 });
                 if (headRes.status === 200) {
@@ -116,24 +114,12 @@ const scrapeWatch = async (id) => {
                         src: mp4SubSrc,
                         format: 'mp4'
                     });
-                    subChecked = true;
                 }
+                // If not 200, do not include -sub
             } catch (e) {
-                // If error is not 404, likely a network/platform issue, so include anyway
-                if (e.response && e.response.status === 404) {
-                    // Do not include -sub
-                    subChecked = true;
-                }
-                // else: network error, platform block, etc.
+                // On any error (404, timeout, network, etc), do NOT include -sub
+                // This makes behavior the same on localhost and Vercel
             }
-            if (!subChecked) {
-                // Fallback: include -sub anyway, let client handle 404
-                results.sources.push({
-                    src: mp4SubSrc,
-                    format: 'mp4'
-                });
-            }
-
             if (!id.includes('-episode')) {
                 results.sources.push({
                     src: `https://r2.1hanime.com/${id}.mp4`,
